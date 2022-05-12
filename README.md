@@ -64,6 +64,9 @@ A Chrome/Firefox extension with custom new tab page featuring Chinese poems and 
 ![bg-2](https://github.com/unicar9/jizhi/blob/master/examples/jizhi-2.4.0-2.jpeg)
 ![bg-3](https://github.com/unicar9/jizhi/blob/master/examples/jizhi-2.4.0-3.jpeg)
 
+## 示例 - 新增数据源配置
+![bg-1](https://github.com/KangSpace/jizhi/blob/master/examples/jizhi-add-data-source.png)
+
 ## 鸣谢
 
 - 使用的字体为[方正金陵系列](http://www.foundertype.com/index.php/FontInfo/index/id/202#)的金陵细简体。

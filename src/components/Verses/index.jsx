@@ -39,7 +39,16 @@ const VersesWrapper = styled.div`
 `;
 
 const Verses = (props) => {
-  const { verses, engineOption, bgOption, isVerticalVerses, fontName, isDarkMode } = props;
+  const {
+    verses,
+    engineOption,
+    bgOption,
+    isVerticalVerses,
+    isShowTranslate,
+    fontName,
+    isDarkMode,
+    onShowTranslate,
+  } = props;
 
   return (
     <VersesWrapper
@@ -48,7 +57,13 @@ const Verses = (props) => {
       fontName={fontName}
       isWaves={bgOption === WAVES}
     >
-      <VersesContent verses={verses} engineOption={engineOption} isVertical={isVerticalVerses} />
+      <VersesContent
+        verses={verses}
+        engineOption={engineOption}
+        isVertical={isVerticalVerses}
+        isShowTranslate={isShowTranslate}
+        onShowTranslate={onShowTranslate}
+      />
     </VersesWrapper>
   );
 };
@@ -57,6 +72,8 @@ Verses.propTypes = {
   verses: PropTypes.object,
   bgOption: PropTypes.string,
   isVerticalVerses: PropTypes.bool,
+  isShowTranslate: PropTypes.bool,
+  onShowTranslate: PropTypes.func,
   engineOption: PropTypes.string,
   fontName: PropTypes.string,
   isDarkMode: PropTypes.bool,

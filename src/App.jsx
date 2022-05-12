@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { hot } from 'react-hot-loader';
 import { ReactP5Wrapper } from 'react-p5-wrapper';
-import { InlineAlert } from 'evergreen-ui';
+import { InlineAlert, toaster } from 'evergreen-ui';
 import waves from './sketchs/waves';
 import blobs from './sketchs/blobs';
 import Verses from './components/Verses';
@@ -10,7 +10,8 @@ import SearchInput from './components/SearchInput';
 import ColorName from './components/ColorName';
 import { saveBackground, insertFont, fetchAndSetFont, pickColor } from './utils';
 import Storager from './utils/storager';
-import { load } from './utils/jinrishici';
+import { load as jrscLoad } from './utils/jinrishici';
+import { load } from './utils/jsonDataLoader';
 import {
   HORIZONTAL,
   VERTICAL,
@@ -22,6 +23,17 @@ import {
 import GlobalStyle from './components/GlobalStyle';
 
 const DEFAULT_SHICI_LIST = require('./constants/shici.json');
+const LOCAL_DATA_KEY = 'LOCAL_DATA';
+const LOCAL_DATA_UPDATE_TIME_KEY = 'LOCAL_DATA_UPDATE_TIME';
+const LOCAL_DATA_DEFAULTDATASOURCECHECKED_KEY = 'defaultDataSourceChecked';
+const LOCAL_DATA_CUSTOMDATASOURCEURL_KEY = 'customDataSourceUrl';
+
+/**
+ * 自定义数据URL
+ * @type {string}
+ */
+const CUSTOM_DATA_URL = 'https://kangspace.org/jizhi/jizhi_data.json';
+// const CUSTOM_DATA_WITH_TOKEN_URL = CUSTOM_DATA_URL + '?token=';
 
 class App extends Component {
   constructor(props) {
@@ -41,25 +53,16 @@ class App extends Component {
       focused: false,
       fontName: DEFAULT_FONT,
       waveColor: pickColor(false),
+      defaultDataSourceChecked: true,
+      customDataSourceUrl: '',
     };
   }
 
   componentDidMount() {
     const hasZh = navigator.languages.includes('zh');
     document.title = hasZh ? '新标签页' : 'New Tab';
-
-    load(
-      (result) => {
-        Storager.set({ verses: result.data });
-      },
-      (err) => {
-        this.setState({ errMessage: err.errMessage });
-        const localShici =
-          DEFAULT_SHICI_LIST[Math.floor(Math.random() * DEFAULT_SHICI_LIST.length)];
-        Storager.set({ verses: localShici });
-      }
-    );
-
+    // 按时间更新,每分钟更新一次
+    this.loadData();
     Storager.get(
       [
         'verses',
@@ -72,12 +75,13 @@ class App extends Component {
         'fontName',
         'fonts',
         'darkModeChecked',
+        'defaultDataSourceChecked',
+        'customDataSourceUrl',
       ],
       (res) => {
         if (res.fonts && res.fontName === res.fonts.fontName) {
           insertFont(res.fonts.value);
         }
-
         this.setState({
           showSearchBarChecked: !!res.showSearchBarChecked,
           darkModeChecked: !!res.darkModeChecked,
@@ -90,9 +94,89 @@ class App extends Component {
           engineOption: res.engineOption || GOOGLE_SEARCH,
           fontName: res.fontName || DEFAULT_FONT,
           waveColor: pickColor(!!res.darkModeChecked),
+          defaultDataSourceChecked: res.defaultDataSourceChecked,
+          customDataSourceUrl: res.customDataSourceUrl || CUSTOM_DATA_URL,
         });
       }
     );
+  }
+
+  /**
+   * 加载数据
+   * 从缓存中加载数据,并定时更新(每分钟更新一次)
+   */
+  loadData(next) {
+    Storager.get(
+      [
+        LOCAL_DATA_KEY,
+        LOCAL_DATA_UPDATE_TIME_KEY,
+        LOCAL_DATA_DEFAULTDATASOURCECHECKED_KEY,
+        LOCAL_DATA_CUSTOMDATASOURCEURL_KEY,
+      ],
+      (data) => {
+        let defaultDataSourceChecked = data[LOCAL_DATA_DEFAULTDATASOURCECHECKED_KEY];
+        if (defaultDataSourceChecked && eval(defaultDataSourceChecked)) {
+          // 加载今日诗词
+          jrscLoad(
+            (result) => {
+              Storager.set({ verses: result.data });
+            },
+            (err) => {
+              this.setState({ errMessage: err.errMessage });
+              const localShici =
+                DEFAULT_SHICI_LIST[Math.floor(Math.random() * DEFAULT_SHICI_LIST.length)];
+              Storager.set({ verses: localShici });
+            }
+          );
+          if (next) next();
+          return;
+        }
+        // 加载自定义数据源
+        let customDataSourceUrl = data[LOCAL_DATA_CUSTOMDATASOURCEURL_KEY] || CUSTOM_DATA_URL;
+        let localData = data[LOCAL_DATA_KEY];
+        let localDataUpdateTime = data[LOCAL_DATA_UPDATE_TIME_KEY];
+        // 1分钟更新一次
+        if (!localDataUpdateTime || localDataUpdateTime < new Date().getTime() - 60 * 1000) {
+          localData = null;
+        }
+        if (!localData) {
+          console.log('load remote.');
+          load(
+            customDataSourceUrl,
+            (result) => {
+              let localData = {};
+              localData[LOCAL_DATA_KEY] = result.data;
+              Storager.set(localData);
+              let localDataUpdateTime = {};
+              localDataUpdateTime[LOCAL_DATA_UPDATE_TIME_KEY] = new Date().getTime();
+              Storager.set(localDataUpdateTime);
+              Storager.set({ verses: this.randomData(result.data) });
+              if (next) next();
+            },
+            (err) => {
+              this.setState({ errMessage: err.errMessage });
+              const localShici =
+                DEFAULT_SHICI_LIST[Math.floor(Math.random() * DEFAULT_SHICI_LIST.length)];
+              Storager.set({ verses: localShici });
+              if (next) next();
+            }
+          );
+        } else {
+          console.log('load local.');
+          Storager.set({ verses: this.randomData(localData) });
+          if (next) next();
+        }
+      }
+    );
+  }
+
+  /**
+   * 获取随机数据
+   * @param data array data
+   * @returns {*}
+   */
+  randomData(data) {
+    return data[Math.floor(Math.random() * data.length)];
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -112,6 +196,11 @@ class App extends Component {
         Storager.set({ showSearchBarChecked: this.state.showSearchBarChecked });
       }
     );
+  };
+  handleShowTranslate = () => {
+    this.setState((state) => ({
+      isShowTranslate: !state.isShowTranslate,
+    }));
   };
 
   handleDarkModeChange = () => {
@@ -199,6 +288,60 @@ class App extends Component {
     this.setState({ fontName }, () => Storager.set({ fontName }));
   };
 
+  /**
+   * 默认数据源选择修改事件
+   */
+  handleDefaultDataSourceCheckedChange = () => {
+    this.setState(
+      (state) => ({
+        defaultDataSourceChecked: !state.defaultDataSourceChecked,
+      }),
+      () => {
+        let defaultDataSourceChecked = this.state.defaultDataSourceChecked;
+        if (defaultDataSourceChecked) {
+          Storager.set({ defaultDataSourceChecked: defaultDataSourceChecked });
+          this.handleDataSourceChanged();
+        }
+      }
+    );
+  };
+
+  /**
+   * 自定义数据源URL修改
+   */
+  handleCustomDataSourceUrlChange = (newVal) => {
+    this.setState(() => ({ customDataSourceUrl: newVal }));
+  };
+
+  /**
+   * 确认自定义数据源URL修改
+   */
+  onCustomDataSourceUrlChangeConfirm = () => {
+    let newVal = this.state.customDataSourceUrl;
+    let urlRegexp =
+      /(http|https):\/\/[\w\-_]+(\.[\w\-_]+)+([\w\-\\.,@?^=%&:/~\\+#]*[\w\-\\@?^=%&/~\\+#])?/;
+    if (!newVal || !urlRegexp.test(newVal)) {
+      toaster.notify('请输入正确的URL!');
+      return false;
+    }
+    // 保存数据
+    this.setState(
+      () => ({}),
+      () => {
+        Storager.set({ defaultDataSourceChecked: this.state.defaultDataSourceChecked });
+        Storager.set({ customDataSourceUrl: this.state.customDataSourceUrl });
+        this.handleDataSourceChanged();
+      }
+    );
+  };
+
+  handleDataSourceChanged() {
+    toaster.success('数据源切换成功');
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  }
+
   handleEngineOptionChange = (engineOption) =>
     this.setState({ engineOption }, () => Storager.set({ engineOption }));
 
@@ -212,6 +355,7 @@ class App extends Component {
     const {
       verses,
       isVerticalVerses,
+      isShowTranslate,
       isPlaying,
       showSearchBarChecked,
       defaultPlayChecked,
@@ -225,6 +369,8 @@ class App extends Component {
       darkModeChecked,
       waveColor,
       isFontLoading,
+      defaultDataSourceChecked,
+      customDataSourceUrl,
     } = this.state;
     const sketches = { blobs, waves };
 
@@ -248,6 +394,8 @@ class App extends Component {
           engineOption={engineOption}
           isDarkMode={darkModeChecked}
           fontName={fontName}
+          isShowTranslate={isShowTranslate}
+          onShowTranslate={this.handleShowTranslate}
         />
         <ReactP5Wrapper
           sketch={sketches[selected]}
@@ -276,6 +424,11 @@ class App extends Component {
           onFontTypeChange={this.handleFontTypeChange}
           isFontLoading={isFontLoading}
           waveColor={waveColor}
+          defaultDataSourceChecked={defaultDataSourceChecked}
+          onDefaultDataSourceCheckedChange={this.handleDefaultDataSourceCheckedChange}
+          customDataSourceUrl={customDataSourceUrl}
+          onCustomDataSourceUrlChange={this.handleCustomDataSourceUrlChange}
+          onCustomDataSourceUrlChangeConfirm={this.onCustomDataSourceUrlChangeConfirm}
         >
           {errMessage && (
             <div style={{ height: 30 }}>

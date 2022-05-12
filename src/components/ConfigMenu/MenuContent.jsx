@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import {
-  Pane,
-  Menu,
-  Tablist,
-  Switch,
-  SidebarTab,
-  SegmentedControl,
-  Spinner,
-  Text,
+  IconButton,
+  InfoSignIcon,
   InlineAlert,
+  Menu,
+  Pane,
+  Position,
+  SegmentedControl,
+  SidebarTab,
+  Spinner,
+  Switch,
+  Tablist,
+  Text,
+  TextInput,
+  TickIcon,
+  Tooltip,
 } from 'evergreen-ui';
 import styled from 'styled-components';
 import { WAVES } from '../../constants/appConstants';
@@ -50,7 +56,52 @@ const MenuContent = (props) => {
     onDarkModeChange,
     isFontLoading,
     waveColor,
+    /**
+     * 默认数据源开关
+     */
+    defaultDataSourceChecked,
+    /**
+     * 默认数据源开关切换事件
+     */
+    onDefaultDataSourceCheckedChange,
+    /**
+     * 自定义数据源路径
+     */
+    customDataSourceUrl,
+    /**
+     * 自定义数据源路径路径修改事件
+     */
+    onCustomDataSourceUrlChange,
+    onCustomDataSourceUrlChangeConfirm,
   } = props;
+
+  /**
+   * 自定义数据源数据格式描述
+   * @type {string}
+   */
+  const customDataSourceDataFormatDesc = `
+1. 按固定格式提供的数据源JSON文件,
+2. JSON文件内容应按以下格式提供: 
+{
+  "tags":"内容的tag分类, 如: 孙子兵法, 素书, 滕王阁序",
+  "status": "数据状态,固定值为:success",
+  "data": [{
+    "content": "单个词句内容",
+    "origin": {
+      "title": "词句来源标题,如古诗的标题",
+      "dynasty": "词句来源朝代,如古诗的朝代",
+      "author": "词句的作者",
+      "content": [
+        "词句所在文章的完整内容"
+      ],
+      "translate": [
+        "词句的翻译"
+      ]
+    }
+  }
+ ]
+}
+    `;
 
   const bgOptions = [
     { label: 'Waves', value: 'waves' },
@@ -102,6 +153,27 @@ const MenuContent = (props) => {
       onChangeFunc: onColorStayChange,
     },
   ];
+
+  /**
+   * 数据源设置
+   * @type {*[]}
+   */
+  const dataSourceOptions = {
+    default: {
+      name: 'default',
+      desc: '今日诗词(默认)',
+      show: true,
+      checked: defaultDataSourceChecked,
+      onChangeFunc: onDefaultDataSourceCheckedChange,
+    },
+    custom: {
+      name: 'custom',
+      desc: '自定义',
+      value: customDataSourceUrl,
+      show: !defaultDataSourceChecked,
+      onChangeFunc: onCustomDataSourceUrlChange,
+    },
+  };
 
   const tabs = [
     {
@@ -185,6 +257,71 @@ const MenuContent = (props) => {
         </Menu.Group>
       ),
     },
+    {
+      tabName: '数据源',
+      tabContent: (
+        <>
+          <Menu.Group title="设置数据源">
+            <Menu.Item key={dataSourceOptions.default.name}>
+              <SwitchWrapper>
+                {dataSourceOptions.default.desc}
+                <Switch
+                  checked={dataSourceOptions.default.checked}
+                  onChange={dataSourceOptions.default.onChangeFunc}
+                />
+              </SwitchWrapper>
+            </Menu.Item>
+          </Menu.Group>
+          <Menu.Divider />
+          {dataSourceOptions.custom.show ? (
+            <Menu.Group
+              title={
+                <>
+                  <Pane display="flex" width={300}>
+                    <Text>自定义</Text>
+                    <Tooltip
+                      content={
+                        <>
+                          <pre>
+                            <code>{customDataSourceDataFormatDesc}</code>
+                          </pre>
+                        </>
+                      }
+                      position={Position.TOP}
+                      appearance="card"
+                    >
+                      <InfoSignIcon />
+                    </Tooltip>
+                  </Pane>
+                </>
+              }
+            >
+              <Pane paddingLeft={16} paddingRight={0} display="flex">
+                <TextInput
+                  name="custom-datasource-url-input-name"
+                  placeholder="输入数据源JSON文件地址..."
+                  title={customDataSourceUrl}
+                  value={customDataSourceUrl}
+                  onChange={(e) => {
+                    onCustomDataSourceUrlChange(e.target.value);
+                  }}
+                />
+                <Tooltip content="保存" position={Position.TOP}>
+                  <IconButton
+                    icon={TickIcon}
+                    intent="success"
+                    marginLeft={5}
+                    onClick={(e) => onCustomDataSourceUrlChangeConfirm(e)}
+                  />
+                </Tooltip>
+              </Pane>
+            </Menu.Group>
+          ) : (
+            ''
+          )}
+        </>
+      ),
+    },
     { tabName: '关于', tabContent: <Legal waveColor={waveColor} selected={selected} /> },
   ];
 
@@ -243,6 +380,11 @@ MenuContent.propTypes = {
   onFontTypeChange: PropTypes.func,
   isFontLoading: PropTypes.bool,
   waveColor: PropTypes.object,
+  defaultDataSourceChecked: PropTypes.bool,
+  onDefaultDataSourceCheckedChange: PropTypes.func,
+  customDataSourceUrl: PropTypes.string,
+  onCustomDataSourceUrlChange: PropTypes.func,
+  onCustomDataSourceUrlChangeConfirm: PropTypes.func,
 };
 
 export default MenuContent;
