@@ -135,8 +135,8 @@ class App extends Component {
         let customDataSourceUrl = data[LOCAL_DATA_CUSTOMDATASOURCEURL_KEY] || CUSTOM_DATA_URL;
         let localData = data[LOCAL_DATA_KEY];
         let localDataUpdateTime = data[LOCAL_DATA_UPDATE_TIME_KEY];
-        // 1分钟更新一次
-        if (!localDataUpdateTime || localDataUpdateTime < new Date().getTime() - 60 * 1000) {
+        // 30s更新一次
+        if (!localDataUpdateTime || localDataUpdateTime < new Date().getTime() - 30 * 1000) {
           localData = null;
         }
         if (!localData) {

@@ -31,7 +31,7 @@ const Legal = ({ waveColor, selected }) => {
       <Pane display="flex" alignItems="center">
         <Avatar src="/static/icons/jizhi-64.png" size={32} name="几枝" />
         <Heading size={500} marginLeft={10}>
-          几枝 v{version}
+          几枝-jigu.pro v{version}
         </Heading>
       </Pane>
 
@@ -45,7 +45,7 @@ const Legal = ({ waveColor, selected }) => {
         <CustomLink url={JIZHI_LINKS.jinrishici.link} name={JIZHI_LINKS.jinrishici.name} />
       </Paragraph>
       <Paragraph size={400} marginTop="default">
-        欢迎访问几枝
+        欢迎访问几枝-jigu.pro
         <CustomLink url={JIZHI_LINKS.home.link} name={JIZHI_LINKS.home.name} />
         查看
         <CustomLink url={JIZHI_LINKS.changelog.link} name={JIZHI_LINKS.changelog.name} />和

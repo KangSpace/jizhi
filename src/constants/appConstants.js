@@ -36,14 +36,14 @@ export const JIZHI_LINKS = {
   },
   home: {
     name: 'Github 主页',
-    link: 'https://github.com/unicar9/jizhi',
+    link: 'https://github.com/KangSpace/jizhi',
   },
   changelog: {
     name: '更新日志',
-    link: 'https://github.com/unicar9/jizhi/blob/master/CHANGELOG.md',
+    link: 'https://github.com/KangSpace/jizhi/blob/master/CHANGELOG.md',
   },
   issues: {
     name: '提交反馈',
-    link: 'https://github.com/unicar9/jizhi/issues',
+    link: 'https://github.com/KangSpace/jizhi/issues',
   },
 };

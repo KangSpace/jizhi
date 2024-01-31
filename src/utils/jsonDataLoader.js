@@ -30,7 +30,7 @@ const corsLoad = (url, callback, errHandler) => {
 };
 
 const commonLoad = (url, callback, errHandler, token) => {
-  return sendRequest(callback, errHandler, url + '?token=' + token);
+  return sendRequest(callback, errHandler, url + '?token=' + token + '&t=' + new Date().getTime());
 };
 
 const sendRequest = (callback, errHandler, apiUrl) => {

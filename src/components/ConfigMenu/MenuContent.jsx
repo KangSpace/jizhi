@@ -315,6 +315,11 @@ const MenuContent = (props) => {
                   />
                 </Tooltip>
               </Pane>
+              <Pane display="flex" paddingLeft={16} width={300}>
+                <a href="https://edit.kangspace.org" target="_blank" rel="noopener noreferrer">
+                  <Text size={300}>{`编辑: https://edit.kangspace.org`}</Text>
+                </a>
+              </Pane>
             </Menu.Group>
           ) : (
             ''
